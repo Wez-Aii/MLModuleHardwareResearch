@@ -1,0 +1,12 @@
+{
+    "name": "Nvidia_Cuda_Ubuntu20_Container",
+    "dockerFile": "ClearML.Dockerfile"
+    ,    
+    "customizations": {
+        "vscode": {
+            "extensions": ["ms-python.python"]
+        }
+    },
+    "privileged": true,
+    "runArgs": ["--network=host", "--runtime=nvidia", "--gpus=all", "--shm-size=16G"]
+}
