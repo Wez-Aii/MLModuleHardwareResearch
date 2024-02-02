@@ -8,22 +8,22 @@ import torch
 from vision.utils import box_utils
 
 def format_onnx_result(result):
-	boxes = result[1]  # Assumes output is a list of bounding boxes
+	# boxes = result[1]  # Assumes output is a list of bounding boxes
 	scores = result[0]
 	# detections = np.squeeze(result[1])  # Assumes output is a list of bounding boxes
-	print("boxes type -", type(boxes))
-	print("boxes -", boxes[0])
+	# print("boxes type -", type(boxes))
+	# print("boxes -", boxes[0])
 	print("scores type -", type(scores))
 	print("scores -", scores[0])
 
 	boxes = torch.from_numpy(boxes)
-	scores = torch.from_numpy(scores)
+	# scores = torch.from_numpy(scores)
 
 	boxes = boxes[0]
-	scores = scores[0]
+	# scores = scores[0]
 
 	boxes = boxes.to(torch.device("cpu"))
-	scores = scores.to(torch.device("cpu"))
+	# scores = scores.to(torch.device("cpu"))
 	picked_box_probs = []
 	picked_labels = []
 
@@ -61,138 +61,53 @@ def format_onnx_result(result):
 
 	return picked_box_probs[:, :4], torch.tensor(picked_labels), picked_box_probs[:, 4]
 
-def format_onnx_coco_result(result):
-	boxes = result[1]  # Assumes output is a list of bounding boxes
-	scores = result[2]
-	# detections = np.squeeze(result[1])  # Assumes output is a list of bounding boxes
-	print("boxes type -", type(boxes))
-	print("boxes -", boxes[0])
-	print("scores type -", type(scores))
-	print("scores -", scores[0])
 
-	boxes = torch.from_numpy(boxes)
-	scores = torch.from_numpy(scores)
-
-	boxes = boxes[0]
-	scores = scores[0]
-
-	boxes = boxes.to(torch.device("cpu"))
-	scores = scores.to(torch.device("cpu"))
-	picked_box_probs = []
-	picked_labels = []
-
-	print(scores.shape[0])
-	print(scores[1])
-	print(scores[1] > 0.8)
-
-	probs = scores
-	print("probs -",probs)
-	mask = probs > 0.4
-	print("mask -",mask)
-	probs = probs[mask]
-
-	# if probs.size(0) == 0:
-	# 	continue
-		
-	subset_boxes = boxes[mask, :]
-	box_probs = torch.cat([subset_boxes, probs.reshape(-1, 1)], dim=1)
-	# box_probs = box_utils.nms(box_probs, None,
-	# 							score_threshold=0.4,
-	# 							iou_threshold=0.45,
-	# 							sigma=0.5,
-	# 							top_k=10,
-	# 							candidate_size=200)
-	picked_box_probs.append(box_probs)
-	# picked_labels.extend([class_index] * box_probs.size(0))
-
-	# for class_index in range(scores.shape[0]):
-	# 	probs = scores[:, class_index]
-	# 	print("probs -",probs)
-	# 	mask = probs > 0.4
-	# 	print("mask -",mask)
-	# 	probs = probs[mask]
-	# 	print("class index -",class_index)
-	# 	if probs.size(0) == 0:
-	# 		continue
-			
-	# 	subset_boxes = boxes[mask, :]
-	# 	box_probs = torch.cat([subset_boxes, probs.reshape(-1, 1)], dim=1)
-	# 	# box_probs = box_utils.nms(box_probs, None,
-	# 	# 							score_threshold=0.4,
-	# 	# 							iou_threshold=0.45,
-	# 	# 							sigma=0.5,
-	# 	# 							top_k=10,
-	# 	# 							candidate_size=200)
-	# 	picked_box_probs.append(box_probs)
-	# 	picked_labels.extend([class_index] * box_probs.size(0))
-		
-	if not picked_box_probs:
-		print("not picked box probs")
-		# return torch.tensor([]), torch.tensor([]), torch.tensor([])
-		
-	picked_box_probs = torch.cat(picked_box_probs)
-	# height, width, _ = image.shape
-	height, width, _ = _c_i.shape
-	picked_box_probs[:, 0] *= width
-	picked_box_probs[:, 1] *= height
-	picked_box_probs[:, 2] *= width
-	picked_box_probs[:, 3] *= height
-
-	# picked_box_probs[:, 0] *= height
-	# picked_box_probs[:, 1] *= width
-	# picked_box_probs[:, 2] *= height
-	# picked_box_probs[:, 3] *= width
-
-	return picked_box_probs[:, :4], torch.tensor(picked_labels), picked_box_probs[:, 4]
-
-
-onnx_model = onnx.load("/workspaces/Wez/models/fruit/ssd-mobilenet.onnx")
-onnx.checker.check_model(onnx_model)
+# # onnx_model = onnx.load("/workspaces/Wez/models/fruit/ssd-mobilenet.onnx")
+# onnx_model = onnx.load("models/ssd_mobilenet_v1_coco_2018_01_28.onnx")
+# onnx.checker.check_model(onnx_model)
 
 # Load the model
 # model_path = "/workspaces/Wez/models/fruit/ssd-mobilenet.onnx"
-# model_path = "/workspaces/Wez/models/ssd_mobilenet_v1_coco_2018_01_28.onnx"
-model_path = "/workspaces/Wez/models/ssd_mobilenet_v1_coco_2018_01_28_prepared.onnx"
+model_path = "/workspaces/Wez/models/ssd_mobilenet_v1_coco_2018_01_28.onnx"
+# model_path = onnx.load("models/ssd_mobilenet_v1_coco_2018_01_28.onnx")
 session = rt.InferenceSession(model_path)
 
 # Prepare input image
-image_path = "/workspaces/Wez/DLtestImages/istockphoto-637563258-612x612.jpg"
+# image_path = "/workspaces/Wez/DLtestImages/istockphoto-637563258-612x612.jpg"
 # image_path = "/workspaces/Wez/data/fruit/validation/02aeb6528711637a.jpg"
 # image_path = "/workspaces/Wez/DLtestImages/360_F_463301545_BclWPd5elIS5T802eIweMpiuj3S2BMv9.jpg"
 # image_path = "/workspaces/Wez/DLtestImages/istockphoto-689765520-612x612.jpg"
 # image_path = "/workspaces/Wez/DLtestImages/How-to-Make-Caramelized-Apples-and-Onions.jpg"
-# image_path = "/workspaces/Wez/DLtestImages/52cf3484be7570bae2cd4354a5587c32c30b68666bea.jpg"
+image_path = "/workspaces/Wez/DLtestImages/2224643025_f99ee71836_b.jpg"
 image = cv2.imread(image_path)
 _copy_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 # _copy_image = image.copy()
 
 # Preprocess _copy_image (adjust based on your model's requirements)
-# input_shape = (1, 3, 300, 300)  # Example input shape
-# print(input_shape[2:4])
-# print(_copy_image.shape)
+input_shape = (1, 3, 300, 300)  # Example input shape
+print(input_shape[2:4])
+print(_copy_image.shape)
 # _copy_image = cv2.resize(_copy_image, (300,300))
-_copy_image = cv2.resize(_copy_image, (300, 300), interpolation=cv2.INTER_AREA)
-_c_i = _copy_image
+_copy_image = cv2.resize(_copy_image, (3, 300), interpolation=cv2.INTER_AREA)
 # Convert to 4-dimensional tensor with color channels first and batch dimension as the first axis
 _copy_image = _copy_image.transpose((2, 0, 1))
-_copy_image = _copy_image.astype(np.float32) / 255.0
+_copy_image = (_copy_image.astype(np.float32) / 255).astype(np.uint8)
 _copy_image = np.expand_dims(_copy_image, axis=0)
 
 # Get model input and output names
+# input_name = session.get_inputs()[0].name
+# output_name = session.get_outputs()[0].name
 input_name = session.get_inputs()[0].name
-output_name = session.get_outputs()
-output_names = []
-for each in output_name:
-	output_names.append(each.name)
+output_name = session.get_outputs()[0].name
+output_names = session.get_outputs()
 
 # Run inference
-result = session.run(output_names, {input_name: _copy_image})
-# result = session.run([output_name], {input_name: _copy_image})
+# result = session.run(['detection_scores', 'detection_boxes'], {input_name: _copy_image})
+result = session.run([output_name], {input_name: _copy_image})
 
 # Process detections (adjust based on your model's output format)
 # print(result[0])
-# boxes, probs, labels = format_onnx_result(result)
-boxes, probs, labels = format_onnx_coco_result(result)
+boxes, labels, probs = format_onnx_result(result)
 
 print("---boxes----",boxes)
 
@@ -218,17 +133,17 @@ for i in range(boxes.size(0)):
     # point_2 = int(box[2]), int(box[3])
     # cv2.rectangle(orig_image, box[0], box[1], box[2], box[3], (255, 255, 0), 4)
     # cv2.rectangle(orig_image, point_1, point_2, (255, 255, 0), 4)
-    cv2.rectangle(_c_i, (int(box[1]), int(box[0])), (int(box[3]), int(box[2])), (255, 255, 0), 4)
+    cv2.rectangle(image, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 255, 0), 4)
     #label = f"""{voc_dataset.class_names[labels[i]]}: {probs[i]:.2f}"""
-    # label = f"{class_names[labels[i]]}: {probs[i]:.2f}"
-    cv2.putText(_c_i, "whatever",
+    label = f"{class_names[labels[i]]}: {probs[i]:.2f}"
+    cv2.putText(image, label,
                 (int(box[0]) + 20, int(box[1]) + 40),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,  # font scale
                 (255, 0, 255),
                 2)  # line type
-path = "test3.jpg"
-cv2.imwrite(path, _c_i)
+path = "test1.jpg"
+cv2.imwrite(path, image)
 print(f"Found {len(probs)} objects. The output image is {path}")
 
 # Draw bounding boxes on the image
